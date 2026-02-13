@@ -5,8 +5,6 @@ import dev.test.projedata.autoflex.api.dtos.request.RawMaterialRequest;
 import dev.test.projedata.autoflex.api.dtos.response.RawMaterialResponse;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-
 @Component
 public class RawMaterialMapper {
 
@@ -14,8 +12,7 @@ public class RawMaterialMapper {
         return new RawMaterialResponse(
                 rawMaterial.getId(),
                 rawMaterial.getName(),
-                rawMaterial.getStockQuantity(),
-                List.of()
+                rawMaterial.getStockQuantity()
         );
     }
 
