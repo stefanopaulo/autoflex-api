@@ -1,11 +1,20 @@
 package dev.test.projedata.autoflex.api.service;
 
 import dev.test.projedata.autoflex.api.domain.Product;
+import dev.test.projedata.autoflex.api.domain.ProductMaterial;
+import dev.test.projedata.autoflex.api.domain.RawMaterial;
+import dev.test.projedata.autoflex.api.dtos.request.ProductMaterialRequest;
+import dev.test.projedata.autoflex.api.dtos.request.ProductMaterialUpdateRequest;
 import dev.test.projedata.autoflex.api.dtos.request.ProductRequest;
+import dev.test.projedata.autoflex.api.dtos.response.ProductMaterialResponse;
 import dev.test.projedata.autoflex.api.dtos.response.ProductResponse;
+import dev.test.projedata.autoflex.api.exceptions.DatabaseException;
 import dev.test.projedata.autoflex.api.exceptions.ResourceNotFoundException;
 import dev.test.projedata.autoflex.api.mapper.ProductMapper;
+import dev.test.projedata.autoflex.api.mapper.ProductMaterialMapper;
+import dev.test.projedata.autoflex.api.repository.ProductMaterialRepository;
 import dev.test.projedata.autoflex.api.repository.ProductRepository;
+import dev.test.projedata.autoflex.api.repository.RawMaterialRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,6 +41,15 @@ class ProductServiceTest {
 
     @Mock
     private ProductMapper productMapper;
+
+    @Mock
+    private RawMaterialRepository rawMaterialRepository;
+
+    @Mock
+    private ProductMaterialRepository productMaterialRepository;
+
+    @Mock
+    private ProductMaterialMapper productMaterialMapper;
 
     @InjectMocks
     private ProductService productService;
@@ -206,5 +224,128 @@ class ProductServiceTest {
         assertThrows(ResourceNotFoundException.class, () -> productService.delete(productId));
         verify(productRepository).existsById(productId);
         verify(productRepository, never()).deleteById(productId);
+    }
+
+    @Test
+    void addMaterial_whenExistsProductAndMaterial_andNotExistsProductMaterial_shouldReturnProductMaterialResponse() {
+        // Given
+        Long productId = 1L;
+        Long rawMaterialId = 3L;
+
+        Product product = new Product(1L, "prod 1", new BigDecimal("150.00"));
+        RawMaterial rawMaterial = new RawMaterial(3L, "material 3", new BigDecimal("30"));
+        ProductMaterial productMaterial = new ProductMaterial(1L, product, rawMaterial, new BigDecimal("5"));
+        ProductMaterialResponse response = new ProductMaterialResponse(productMaterial.getId(), rawMaterial.getId(), rawMaterial.getName(), productMaterial.getQuantityRequired());
+        ProductMaterialRequest request = new ProductMaterialRequest(rawMaterialId, new BigDecimal("5"));
+
+        when(productMaterialRepository.findByProductIdAndRawMaterialId(productId, rawMaterialId)).thenReturn(Optional.empty());
+        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        when(rawMaterialRepository.findById(rawMaterialId)).thenReturn(Optional.of(rawMaterial));
+        when(productMaterialRepository.save(any(ProductMaterial.class))).thenReturn(productMaterial);
+        when(productMaterialMapper.toResponse(productMaterial)).thenReturn(response);
+
+        // When
+        ProductMaterialResponse result = productService.addMaterial(productId, request);
+
+        // Then
+        assertEquals(response, result);
+        verify(productMaterialRepository).findByProductIdAndRawMaterialId(productId, rawMaterialId);
+        verify(productRepository).findById(productId);
+        verify(rawMaterialRepository).findById(rawMaterialId);
+        verify(productMaterialRepository).save(any(ProductMaterial.class));
+        verify(productMaterialMapper).toResponse(productMaterial);
+    }
+
+    @Test
+    void addMaterial_whenExistsProductMaterial_shouldThrowDatabaseException() {
+        // Given
+        Long productId = 1L;
+        Long rawMaterialId = 3L;
+
+        ProductMaterial productMaterial = new ProductMaterial();
+        ProductMaterialRequest request = new ProductMaterialRequest(rawMaterialId, new BigDecimal("5"));
+
+        when(productMaterialRepository.findByProductIdAndRawMaterialId(productId, rawMaterialId)).thenReturn(Optional.of(productMaterial));
+
+        // When/Then
+        assertThrows(DatabaseException.class, () -> productService.addMaterial(productId, request));
+        verify(rawMaterialRepository, never()).findById(any());
+        verify(productRepository, never()).findById(any());
+        verify(productMaterialRepository, never()).save(any(ProductMaterial.class));
+    }
+
+    @Test
+    void updateQuantityMaterial_whenExistsProductMaterial_shouldReturnProductMaterialResponse() {
+        // Given
+        Long productId = 1L;
+        Long rawMaterialId = 3L;
+
+        Product product = new Product(1L, "prod 1", new BigDecimal("150.00"));
+        RawMaterial rawMaterial = new RawMaterial(3L, "material 3", new BigDecimal("30"));
+        ProductMaterial productMaterial = new ProductMaterial(1L, product, rawMaterial, new BigDecimal("5"));
+        ProductMaterialResponse response = new ProductMaterialResponse(productMaterial.getId(), rawMaterial.getId(), rawMaterial.getName(), productMaterial.getQuantityRequired());
+        ProductMaterialUpdateRequest request = new ProductMaterialUpdateRequest(new BigDecimal("5"));
+
+        when(productMaterialRepository.findByProductIdAndRawMaterialId(productId, rawMaterialId)).thenReturn(Optional.of(productMaterial));
+        when(productMaterialMapper.toResponse(productMaterial)).thenReturn(response);
+
+        // When
+        ProductMaterialResponse result = productService.updateQuantityMaterial(productId, rawMaterialId, request);
+
+        // Then
+        assertEquals(response, result);
+        assertEquals(request.quantityRequired(), result.quantityRequired());
+        verify(productMaterialRepository).findByProductIdAndRawMaterialId(productId, rawMaterialId);
+        verify(productMaterialMapper).toResponse(productMaterial);
+    }
+
+    @Test
+    void updateQuantityMaterial_whenNotExistsProductMaterial_shouldThrowResourceNotFoundException() {
+        // Given
+        Long productId = 999L;
+        Long rawMaterialId = 3L;
+
+        ProductMaterialUpdateRequest request = new ProductMaterialUpdateRequest(new BigDecimal("5"));
+
+        when(productMaterialRepository.findByProductIdAndRawMaterialId(productId, rawMaterialId)).thenReturn(Optional.empty());
+
+        // When/Then
+        assertThrows(ResourceNotFoundException.class, () -> productService.updateQuantityMaterial(productId, rawMaterialId, request));
+        verify(productMaterialRepository).findByProductIdAndRawMaterialId(productId, rawMaterialId);
+        verify(productMaterialMapper, never()).toResponse(any());
+    }
+
+    @Test
+    void deleteMaterial_whenExistsProductMaterial_shouldDeleteSuccessfully() {
+        // Given
+        Long productId = 1L;
+        Long rawMaterialId = 3L;
+
+        Product product = new Product(1L, "prod 1", new BigDecimal("150.00"));
+        RawMaterial rawMaterial = new RawMaterial(3L, "material 3", new BigDecimal("30"));
+        ProductMaterial productMaterial = new ProductMaterial(1L, product, rawMaterial, new BigDecimal("5"));
+
+        when(productMaterialRepository.findByProductIdAndRawMaterialId(productId, rawMaterialId)).thenReturn(Optional.of(productMaterial));
+
+        // When
+        productService.deleteMaterial(productId, rawMaterialId);
+
+        // Then
+        verify(productMaterialRepository).findByProductIdAndRawMaterialId(productId, rawMaterialId);
+        verify(productMaterialRepository).deleteById(productMaterial.getId());
+    }
+
+    @Test
+    void deleteMaterial_whenNotExistsProductMaterial_shouldThrowResourceNotFoundException() {
+        // Given
+        Long productId = 999L;
+        Long rawMaterialId = 3L;
+
+        when(productMaterialRepository.findByProductIdAndRawMaterialId(productId, rawMaterialId)).thenReturn(Optional.empty());
+
+        // When/Then
+        assertThrows(ResourceNotFoundException.class, () -> productService.deleteMaterial(productId, rawMaterialId));
+        verify(productMaterialRepository).findByProductIdAndRawMaterialId(productId, rawMaterialId);
+        verify(productMaterialRepository, never()).deleteById(any());
     }
 }
