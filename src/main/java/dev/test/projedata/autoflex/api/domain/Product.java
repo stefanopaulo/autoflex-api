@@ -21,7 +21,7 @@ public class Product {
     private BigDecimal price;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "product")
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductMaterial> productMaterials;
 
     public Product() {
