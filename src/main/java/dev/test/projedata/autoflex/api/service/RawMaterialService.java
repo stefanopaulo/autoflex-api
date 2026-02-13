@@ -3,11 +3,13 @@ package dev.test.projedata.autoflex.api.service;
 import dev.test.projedata.autoflex.api.domain.RawMaterial;
 import dev.test.projedata.autoflex.api.dtos.request.RawMaterialRequest;
 import dev.test.projedata.autoflex.api.dtos.response.RawMaterialResponse;
+import dev.test.projedata.autoflex.api.exceptions.DatabaseException;
 import dev.test.projedata.autoflex.api.exceptions.ResourceNotFoundException;
 import dev.test.projedata.autoflex.api.mapper.RawMaterialMapper;
 import dev.test.projedata.autoflex.api.repository.RawMaterialRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -57,8 +59,13 @@ public class RawMaterialService {
 
     @Transactional
     public void delete(Long id) {
-        if (!rawMaterialRepository.existsById(id)) throw new ResourceNotFoundException("RawMaterial not found. Id: " + id);
+        try {
+            if (!rawMaterialRepository.existsById(id)) throw new ResourceNotFoundException("RawMaterial not found. Id: " + id);
 
-        rawMaterialRepository.deleteById(id);
+            rawMaterialRepository.deleteById(id);
+            rawMaterialRepository.flush();
+        } catch (DataIntegrityViolationException e) {
+            throw new DatabaseException("Cannot delete: RawMaterial has associated records");
+        }
     }
 }

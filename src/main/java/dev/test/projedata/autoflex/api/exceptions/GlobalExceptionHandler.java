@@ -22,6 +22,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
+    @ExceptionHandler(DatabaseException.class)
+    public ResponseEntity<ApiError> handleDatabase(DatabaseException ex) {
+        var error = new ApiError(BAD_REQUEST, "Database error", LocalDateTime.now(), List.of(ex.getMessage()));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleArgumentNotValid(MethodArgumentNotValidException ex) {
         List<String> errors = ex.getBindingResult()

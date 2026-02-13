@@ -5,17 +5,23 @@ import dev.test.projedata.autoflex.api.dtos.request.ProductRequest;
 import dev.test.projedata.autoflex.api.dtos.response.ProductResponse;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-
 @Component
 public class ProductMapper {
+
+    private final ProductMaterialMapper productMaterialMapper;
+
+    public ProductMapper(ProductMaterialMapper productMaterialMapper) {
+        this.productMaterialMapper = productMaterialMapper;
+    }
 
     public ProductResponse toResponse(Product product) {
         return new ProductResponse(
                 product.getId(),
                 product.getName(),
                 product.getPrice(),
-                List.of()
+                product.getProductMaterials()
+                        .stream().map(productMaterialMapper::toResponse)
+                        .toList()
         );
     }
 
