@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -22,7 +23,7 @@ public class RawMaterial {
 
     @JsonIgnore
     @OneToMany(mappedBy = "rawMaterial")
-    private List<ProductMaterial> productMaterials;
+    private List<ProductMaterial> productMaterials = new ArrayList<>();
 
     public RawMaterial() {
     }

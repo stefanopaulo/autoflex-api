@@ -7,6 +7,7 @@ import dev.test.projedata.autoflex.api.dtos.request.ProductMaterialRequest;
 import dev.test.projedata.autoflex.api.dtos.request.ProductMaterialUpdateRequest;
 import dev.test.projedata.autoflex.api.dtos.request.ProductRequest;
 import dev.test.projedata.autoflex.api.dtos.response.ProductMaterialResponse;
+import dev.test.projedata.autoflex.api.dtos.response.ProductProductionResponse;
 import dev.test.projedata.autoflex.api.dtos.response.ProductResponse;
 import dev.test.projedata.autoflex.api.exceptions.DatabaseException;
 import dev.test.projedata.autoflex.api.exceptions.ResourceNotFoundException;
@@ -332,7 +333,7 @@ class ProductServiceTest {
 
         // Then
         verify(productMaterialRepository).findByProductIdAndRawMaterialId(productId, rawMaterialId);
-        verify(productMaterialRepository).deleteById(productMaterial.getId());
+        verify(productMaterialRepository).delete(productMaterial);
     }
 
     @Test
@@ -347,5 +348,36 @@ class ProductServiceTest {
         assertThrows(ResourceNotFoundException.class, () -> productService.deleteMaterial(productId, rawMaterialId));
         verify(productMaterialRepository).findByProductIdAndRawMaterialId(productId, rawMaterialId);
         verify(productMaterialRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void getAvailableProduction_whenExistsRelationshipBetweenProductAndRawMaterial_shouldReturnListOfProductProductionResponse() {
+        // Given
+        Product p1 = new Product(1L, "prod 1", new BigDecimal("150.00"));
+        Product p2 = new Product(2L, "prod 2", new BigDecimal("50.00"));
+
+        RawMaterial rm1 = new RawMaterial(1L, "material 1", new BigDecimal("30"));
+        RawMaterial rm2 = new RawMaterial(2L, "material 2", new BigDecimal("15"));
+
+        ProductMaterial pm1 = new ProductMaterial(1L, p1, rm1, new BigDecimal("5"));
+        ProductMaterial pm2 = new ProductMaterial(2L, p1, rm2, new BigDecimal("5"));
+        p1.getProductMaterials().addAll(List.of(pm1, pm2));
+
+        ProductMaterial pm3 = new ProductMaterial(3L, p2, rm1, new BigDecimal("15"));
+        p2.getProductMaterials().add(pm3);
+
+        when(productRepository.findAllWithMaterials()).thenReturn(List.of(p1, p2));
+
+        // When
+        List<ProductProductionResponse> result = productService.getAvailableProduction();
+
+        // Then
+        assertEquals(2, result.size());
+        assertEquals("prod 1", result.get(0).productName());
+        assertEquals(3, result.get(0).maxProductProduction());
+        assertEquals("prod 2", result.get(1).productName());
+        assertEquals(2, result.get(1).maxProductProduction());
+
+        verify(productRepository).findAllWithMaterials();
     }
 }
