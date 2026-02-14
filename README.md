@@ -29,7 +29,7 @@ A regra de produção considera a matéria-prima limitante, calculando a quantid
 - Spring Data JPA
 - Docker
 - H2 (perfil de teste)
-- Oracle
+- Postgres
 - JUnit 5
 - Mockito
 - MockMvc
@@ -107,25 +107,64 @@ DELETE /rawMaterials/{id}
 
 ---
 
+## 🗄️ Persistência e Perfis (Spring Profiles)
+- O projeto está configurado para operar em diferentes ambientes através de perfis do Spring:
+
+- Perfil de Teste (Padrão no Docker): Utiliza o banco de dados H2 In-Memory. Esta é a forma encontrada para subir o projeto rapidamente, pois não exige nenhuma dependência externa ou configuração de banco de dados.
+
+- Perfil de Desenvolvimento (Dev): Configurado para PostgreSQL.
+
+- As configurações detalhadas estão em src/main/resources/application-dev.properties.
+
+- Para utilizar este perfil, altere a propriedade spring.profiles.active=dev no arquivo application.properties e certifique-se de que uma instância do PostgreSQL esteja rodando localmente.
+
+**Observação:** *A imagem Docker descrita na seção "Como Executar" foi pré-configurada com o Perfil de Teste. Isso garante que a aplicação seja iniciada imediatamente após o clone, sem necessidade de setup manual de banco de dados por parte do avaliador.*
+
+---
+
 ## ▶ Como Executar
 
 1. Clone o repositório
 ```bash
 git clone git@github.com:stefanopaulo/autoflex-api.git
+cd autoflex-api
 ```
 
-2. Execute a aplicação
+2. Build da imagem Docker
 
 ```bash
-mvn spring-boot:run
+docker build -t autoflex-api .
 ```
 
-3. Acesse
+3. Executar o container
 ```bash
-http://localhost:8080
+docker run -p 8080:8080 --name autoflex-api autoflex-api
 ```
 
-4. Importe as coleções que estão na pasta `/postman`para testar os endpoints
+4. Acesso e Testes
+   - Após o container subir, a aplicação estará disponível em http://localhost:8080
+
+- Documentação interativa
+```bash
+http://localhost:8080/swagger-ui/index.html
+```
+
+- Exemplo de Paginação (Para findAll de Product e RawMaterial)
+```json
+{
+  "page": 0,
+  "size": 10,
+  "sort": ["name"]
+}
+```
+
+- H2 console
+```bash
+http://localhost:8080/h2-console
+```
+  - JDBC URL: jdbc:h2:mem:testdb
+
+  - User: sa | Password: (em branco)
 
 ---
 
