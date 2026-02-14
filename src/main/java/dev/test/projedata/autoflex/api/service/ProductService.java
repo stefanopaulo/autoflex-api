@@ -7,6 +7,7 @@ import dev.test.projedata.autoflex.api.dtos.request.ProductMaterialRequest;
 import dev.test.projedata.autoflex.api.dtos.request.ProductMaterialUpdateRequest;
 import dev.test.projedata.autoflex.api.dtos.request.ProductRequest;
 import dev.test.projedata.autoflex.api.dtos.response.ProductMaterialResponse;
+import dev.test.projedata.autoflex.api.dtos.response.ProductProductionResponse;
 import dev.test.projedata.autoflex.api.dtos.response.ProductResponse;
 import dev.test.projedata.autoflex.api.exceptions.DatabaseException;
 import dev.test.projedata.autoflex.api.exceptions.ResourceNotFoundException;
@@ -21,6 +22,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -110,6 +114,26 @@ public class ProductService {
     public void deleteMaterial(Long productId, Long rawMaterialId) {
         ProductMaterial productMaterial = productMaterialRepository.findByProductIdAndRawMaterialId(productId, rawMaterialId).orElseThrow(() -> new ResourceNotFoundException("ProductMaterial not found"));
 
-        productMaterialRepository.deleteById(productMaterial.getId());
+        productMaterialRepository.delete(productMaterial);
+    }
+
+    public List<ProductProductionResponse> getAvailableProduction() {
+        List<Product> products = productRepository.findAllWithMaterials();
+
+        return products.stream()
+                .map((product -> {
+                    int maxPossible = product.getProductMaterials().stream()
+                            .mapToInt(pm -> {
+                                BigDecimal stockAvailable = pm.getRawMaterial().getStockQuantity();
+                                BigDecimal requiredPerUnit = pm.getQuantityRequired();
+
+                                return stockAvailable.divide(requiredPerUnit, 0, RoundingMode.FLOOR).intValue();
+                            })
+                            .min()
+                            .orElse(0);
+
+                    return new ProductProductionResponse(product.getId(), product.getName(), maxPossible);
+                }))
+                .toList();
     }
 }

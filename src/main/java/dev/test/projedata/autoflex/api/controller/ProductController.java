@@ -4,6 +4,7 @@ import dev.test.projedata.autoflex.api.dtos.request.ProductMaterialRequest;
 import dev.test.projedata.autoflex.api.dtos.request.ProductMaterialUpdateRequest;
 import dev.test.projedata.autoflex.api.dtos.request.ProductRequest;
 import dev.test.projedata.autoflex.api.dtos.response.ProductMaterialResponse;
+import dev.test.projedata.autoflex.api.dtos.response.ProductProductionResponse;
 import dev.test.projedata.autoflex.api.dtos.response.ProductResponse;
 import dev.test.projedata.autoflex.api.service.ProductService;
 import jakarta.validation.Valid;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.util.List;
 
 @RestController
 @RequestMapping("/products")
@@ -76,5 +78,10 @@ public class ProductController {
     public ResponseEntity<Void> deleteMaterial(@PathVariable Long productId, @PathVariable Long materialId) {
         productService.deleteMaterial(productId, materialId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/availableProduction")
+    public ResponseEntity<List<ProductProductionResponse>> getAvailableProduction() {
+        return ResponseEntity.ok().body(productService.getAvailableProduction());
     }
 }
