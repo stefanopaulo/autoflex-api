@@ -75,96 +75,96 @@ O cálculo da produção disponível:
 
 ## 🌐 Endpoints Principais
 
-### Produtos
-```bash
-POST   /products
-GET    /products
-GET    /products/{id}
-PUT    /products/{id}
-DELETE /products/{id}
-```
+### 📦 Produtos
+| Método | Endpoint | Descrição |
+| :--- | :--- | :--- |
+| **POST** | `/products` | Cadastra um novo produto |
+| **GET** | `/products` | Lista todos os produtos (Paginação disponível) |
+| **GET** | `/products/{id}` | Busca um produto pelo ID |
+| **PUT** | `/products/{id}` | Atualiza os dados de um produto |
+| **DELETE** | `/products/{id}` | Remove um produto do sistema |
 
-### Associação de Materiais
-```bash
-POST   /products/{productId}/materials
-PATCH  /products/{productId}/materials/{materialId}
-DELETE /products/{productId}/materials/{materialId}
-```
+### 🔗 Associação de Materiais (Composição)
+| Método | Endpoint | Descrição |
+| :--- | :--- | :--- |
+| **POST** | `/products/{productId}/materials` | Associa uma matéria-prima ao produto |
+| **PATCH** | `/products/{productId}/materials/{matId}` | Ajusta a quantidade de material na composição |
+| **DELETE** | `/products/{productId}/materials/{matId}` | Remove um material da composição do produto |
 
-### Produção Disponível
-```bash
-GET /products/availableProduction
-```
+### ⚙️ Produção e Estoque
+| Método | Endpoint | Descrição |
+| :--- | :--- | :--- |
+| **GET** | `/products/availableProduction` | Calcula o potencial de produção baseado no estoque atual |
 
-### Matéria-prima
-```bash
-POST   /rawMaterials
-GET    /rawMaterials
-GET    /rawMaterials/{id}
-PUT    /rawMaterials/{id}
-DELETE /rawMaterials/{id}
-```
-
----
-
-## 🗄️ Persistência e Perfis (Spring Profiles)
-- O projeto está configurado para operar em diferentes ambientes através de perfis do Spring:
-
-- Perfil de Teste (Padrão no Docker): Utiliza o banco de dados H2 In-Memory. Esta é a forma encontrada para subir o projeto rapidamente, pois não exige nenhuma dependência externa ou configuração de banco de dados.
-
-- Perfil de Desenvolvimento (Dev): Configurado para PostgreSQL.
-
-- As configurações detalhadas estão em src/main/resources/application-dev.properties.
-
-- Para utilizar este perfil, altere a propriedade spring.profiles.active=dev no arquivo application.properties e certifique-se de que uma instância do PostgreSQL esteja rodando localmente.
-
-**Observação:** *A imagem Docker descrita na seção "Como Executar" foi pré-configurada com o Perfil de Teste. Isso garante que a aplicação seja iniciada imediatamente após o clone, sem necessidade de setup manual de banco de dados por parte do avaliador.*
+### 🧪 Matéria-prima (Raw Materials)
+| Método | Endpoint | Descrição |
+| :--- | :--- | :--- |
+| **POST** | `/rawMaterials` | Cadastra uma nova matéria-prima |
+| **GET** | `/rawMaterials` | Lista todas as matérias-primas |
+| **GET** | `/rawMaterials/{id}` | Busca matéria-prima por ID |
+| **PUT** | `/rawMaterials/{id}` | Atualiza dados da matéria-prima |
+| **DELETE** | `/rawMaterials/{id}` | Remove uma matéria-prima |
 
 ---
 
-## ▶ Como Executar
+## 🗄️ Persistência e Infraestrutura
 
-1. Clone o repositório
+O projeto utiliza **Docker Compose** para orquestrar a aplicação e o banco de dados.
+
+- **Banco de Dados:** PostgreSQL 15 (Docker)
+- **Perfil Ativo:** `dev` (configurado para integração automática com o container do banco)
+- **Portas Customizadas:**
+   - Aplicação: `8085`
+   - Banco: `5433`
+
+---
+
+## ▶️ Como Executar
+
+### 1. Clone o repositório
+
 ```bash
 git clone git@github.com:stefanopaulo/autoflex-api.git
 cd autoflex-api
 ```
-
-2. Build da imagem Docker
+### 2. Inicie a aplicação com Docker Compose
 
 ```bash
-docker build -t autoflex-api .
+docker-compose up -d --build
 ```
 
-3. Executar o container
-```bash
-docker run -p 8080:8080 --name autoflex-api autoflex-api
+Esse comando irá:
+
+- Realizar o build da imagem
+- Baixar dependências do Maven
+- Configurar o banco PostgreSQL
+- Subir a API
+
+---
+
+## 🌐 Acesso e Testes
+
+A aplicação estará disponível em:  
+👉 http://localhost:8085
+
+---
+
+## 📖 Documentação e Endpoints
+
+### Swagger UI (Interativo)
+
+A documentação completa e a ferramenta de testes podem ser acessadas em:  
+👉 http://localhost:8085/swagger-ui/index.html
+
+---
+
+## 📌 Exemplo de Paginação
+
+Para endpoints que listam recursos (como `Product` e `RawMaterial`), utilize parâmetros de URL:
+
+```http
+GET /products?page=0&size=10&sort=name
 ```
-
-4. Acesso e Testes
-   - Após o container subir, a aplicação estará disponível em http://localhost:8080
-
-- Documentação interativa
-```bash
-http://localhost:8080/swagger-ui/index.html
-```
-
-- Exemplo de Paginação (Para findAll de Product e RawMaterial)
-```json
-{
-  "page": 0,
-  "size": 10,
-  "sort": ["name"]
-}
-```
-
-- H2 console
-```bash
-http://localhost:8080/h2-console
-```
-  - JDBC URL: jdbc:h2:mem:testdb
-
-  - User: sa | Password: (em branco)
 
 ---
 

@@ -10,6 +10,7 @@ import dev.test.projedata.autoflex.api.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -50,7 +51,7 @@ public class ProductController {
     @Operation(summary = "FindAll Product", description = "List all products available for use")
     @GetMapping
     public ResponseEntity<Page<ProductResponse>> findAll(
-           @PageableDefault(page = 0, size = 10, sort = "name") Pageable pageable) {
+            @ParameterObject @PageableDefault(page = 0, size = 10, sort = "name") Pageable pageable) {
         return ResponseEntity.ok().body(productService.findAll(pageable));
     }
 
